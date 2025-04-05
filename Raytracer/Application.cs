@@ -3,13 +3,14 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Raytracer.Materials;
 using Raytracer.Primitives;
 
 namespace Raytracer;
 
 public class Application : GameWindow
 {
-    private float[] vertices =
+    private float[] _vertices =
     {
         -1.0f, -1.0f, 1.0f,     1.0f, 0.0f, 1.0f,       0.0f, 1.0f,
         -1.0f, 1.0f, 1.0f,      1.0f, 0.0f, 1.0f,       0.0f, 0.0f,
@@ -17,17 +18,17 @@ public class Application : GameWindow
         1.0f, -1.0f, 1.0f,        1.0f, 1.0f, 1.0f,       1.0f, 1.0f,
     };
 
-    private int[] indices =
+    private int[] _indices =
     {
         0, 1, 2,
         0, 2, 3
     };
     
-    private int vbo, vao, ebo, textureId;
+    private int _vbo, _vao, _ebo, _textureId;
 
-    private byte[] textureData = new byte[800 * 600 * 3];
+    private byte[] _textureData = new byte[800 * 600 * 3];
 
-    private Shader shader;
+    private Shader _shader;
     private Raytracer _raytracer;
     private Scene _scene;
     
@@ -38,18 +39,18 @@ public class Application : GameWindow
             Title = title
         })
     {
-        textureId = GL.GenTexture();
+        _textureId = GL.GenTexture();
         
-        vao = GL.GenVertexArray();
-        vbo = GL.GenBuffer();
-        ebo = GL.GenBuffer();
+        _vao = GL.GenVertexArray();
+        _vbo = GL.GenBuffer();
+        _ebo = GL.GenBuffer();
         
-        GL.BindVertexArray(vao);
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
+        GL.BindVertexArray(_vao);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, _vbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
         
-        GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
-        GL.BufferData(BufferTarget.ElementArrayBuffer,indices.Length * sizeof(int), indices, BufferUsageHint.StaticDraw);
+        GL.BindBuffer(BufferTarget.ElementArrayBuffer, _ebo);
+        GL.BufferData(BufferTarget.ElementArrayBuffer,_indices.Length * sizeof(int), _indices, BufferUsageHint.StaticDraw);
         
         GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
         GL.EnableVertexAttribArray(0);
@@ -65,12 +66,14 @@ public class Application : GameWindow
         GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
         
         Console.WriteLine("Compiling shaders...");
-        shader = new Shader("./Shaders/shader.vert", "./Shaders/shader.frag");
+        _shader = new Shader("./Shaders/shader.vert", "./Shaders/shader.frag");
         Console.WriteLine("Ended shader compilation.");
         
         Console.WriteLine("Initializing raytracer...");
-        IPrimitive[] primitives = new IPrimitive[1];
-        primitives[0] = new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new Vector3(1.0f, 0.0f, 0.0f));
+        IPrimitive[] primitives = new IPrimitive[3];
+        primitives[0] = new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new DefaultMaterial(new Vector3(1.0f, 0.0f, 0.0f)));
+        primitives[1] = new Sphere(new Vector3(0, 0, 2.0f), .5f, new DefaultMaterial(new Vector3(0, 1.0f, 0)));
+        primitives[2] = new Triangle(new Vector3(-.25f, 0, 1.0f), new Vector3(.25f, 0, 1.0f), new Vector3(0, 1, 2.0f), new DefaultMaterial(new Vector3(1.0f, 1.0f, 0)));
         _scene = new Scene(primitives);
         _raytracer = new Raytracer(800, 600, 0.5f, 0.8f, 0.6f, _scene, Vector3.Zero);
         Console.WriteLine("Raytracer initialized.");
@@ -85,27 +88,27 @@ public class Application : GameWindow
             Close();
         }
 
-        for (int i = 0; i < textureData.Length; i++)
+        for (int i = 0; i < _textureData.Length; i++)
         {
-            textureData[i] = 255;
+            _textureData[i] = 255;
         }
-        _raytracer.Render(textureData);
+        _raytracer.Render(_textureData);
         
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
         // GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, BufferUsageHint.StaticDraw);
         // GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-        GL.UseProgram(shader.Handle);
+        GL.UseProgram(_shader.Handle);
         
         GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
-        GL.BindTexture(TextureTarget.Texture2D, textureId);
+        GL.BindTexture(TextureTarget.Texture2D, _textureId);
 //        GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, TextureWrapMode.);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 800, 600, 0, PixelFormat.Rgb, PixelType.UnsignedByte, textureData);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 800, 600, 0, PixelFormat.Rgb, PixelType.UnsignedByte, _textureData);
         
-        GL.BindVertexArray(vao);
+        GL.BindVertexArray(_vao);
         GL.DrawElements(BeginMode.Triangles, 6, DrawElementsType.UnsignedInt, 0);
         GL.BindVertexArray(0);
         

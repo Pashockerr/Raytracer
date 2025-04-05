@@ -1,27 +1,26 @@
 ﻿using OpenTK.Mathematics;
+using Raytracer.Materials;
 
 namespace Raytracer.Primitives;
 
-public class Plane(Vector3 position, Vector3 normal, Vector3 color) : IPrimitive
+public class Plane(Vector3 position, Vector3 normal, IMaterial material) : IPrimitive
 {
-    public Vector3 Position = position;
-    public Vector3 Normal = normal;
-    public Vector3 Color = color;
-    
-    public const float Epsilon = 0.0001f;
+    private Vector3 _position = position;
+    private Vector3 _normal = normal;
+    private IMaterial _material = material;
     
     public HitResult Intersect(Vector3 origin, Vector3 direction)
     {
-        HitResult result = new HitResult(false, new Vector3(0.0f, 0.0f, 0.0f), float.PositiveInfinity);
+        HitResult result = HitResult.Skybox;
 
-        var numerator = Vector3.Dot(Position - origin, Normal);
-        var denominator = Vector3.Dot(direction, Normal);
+        var numerator = Vector3.Dot(_position - origin, _normal);
+        var denominator = Vector3.Dot(direction, _normal);
         var t = numerator / denominator;
         if (t >= 0)
         {
             result.IsHit = true;
             result.Distance = t;
-            result.Color = Color;
+            result.Material = _material;
         }
         
         return result;

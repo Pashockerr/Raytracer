@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Platform.Windows;
+using Raytracer.Materials;
 
 namespace Raytracer;
 
@@ -55,7 +56,7 @@ public class Raytracer
                 var viewportPoint = _viewportCenter + new Vector3(dVX, dVY, 0);
                 var direction = viewportPoint - _cameraPosition;    // Direction vector from camera center to current viewport point
                 float minDistance = float.MaxValue;
-                HitResult? closestHitResult = HitResult.Skybox;
+                HitResult closestHitResult = HitResult.Skybox;
                 for (int pI = 0; pI < _scene.Primitives.Length; pI++)   // Find the closest hit
                 {
                     var hitResult = _scene.Primitives[pI].Intersect(_cameraPosition, direction.Normalized());
@@ -65,9 +66,17 @@ public class Raytracer
                         closestHitResult = hitResult;
                     }
                 }
+                
+                IMaterial collidedMaterial = closestHitResult.Material;
+                Vector3 pointColor = Vector3.Zero;
+                if (collidedMaterial is DefaultMaterial material)
+                {
+                    pointColor = material.Color;
+                }
+                
+                byte[] pixelColor = ConvertColor(pointColor);
 
                 // Put collided color into texture
-                var pixelColor = ConvertColor(closestHitResult!.Value.Color);
                 texture[(dPY * _width + dPX) * 3] = pixelColor[0];
                 texture[(dPY * _width + dPX) * 3 + 1] = pixelColor[1];
                 texture[(dPY * _width + dPX) * 3 + 2] = pixelColor[2];
