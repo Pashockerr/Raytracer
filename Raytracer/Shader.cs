@@ -44,5 +44,7 @@ public class Shader
         {
             Console.WriteLine(GL.GetProgramInfoLog(Handle));
         }
+        GL.DeleteShader(vertexShader);
+        GL.DeleteShader(fragmentShader);
     }
 }
