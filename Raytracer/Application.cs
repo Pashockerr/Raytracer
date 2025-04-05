@@ -1,7 +1,9 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Raytracer.Primitives;
 
 namespace Raytracer;
 
@@ -23,13 +25,11 @@ public class Application : GameWindow
     
     private int vbo, vao, ebo, textureId;
 
-    private byte[] textureData =
-    {
-        0, 255, 0,     0, 0, 255,
-        255, 255, 0,      255, 0, 0,
-    };
+    private byte[] textureData = new byte[800 * 600 * 3];
 
     private Shader shader;
+    private Raytracer _raytracer;
+    private Scene _scene;
     
     public Application(int width, int height, string title) : base(GameWindowSettings.Default,
         new NativeWindowSettings()
@@ -67,6 +67,13 @@ public class Application : GameWindow
         Console.WriteLine("Compiling shaders...");
         shader = new Shader("./Shaders/shader.vert", "./Shaders/shader.frag");
         Console.WriteLine("Ended shader compilation.");
+        
+        Console.WriteLine("Initializing raytracer...");
+        IPrimitive[] primitives = new IPrimitive[1];
+        primitives[0] = new Plane(Vector3.Zero, new Vector3(0, 1.0f, 0), new Vector3(1.0f, 0.0f, 0.0f));
+        _scene = new Scene(primitives);
+        _raytracer = new Raytracer(800, 600, 0.5f, 0.8f, 0.6f, _scene, Vector3.Zero);
+        Console.WriteLine("Raytracer initialized.");
     }
 
     protected override void OnUpdateFrame(FrameEventArgs args)
@@ -77,6 +84,8 @@ public class Application : GameWindow
         {
             Close();
         }
+        
+        _raytracer.Render(textureData);
         
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
@@ -90,7 +99,7 @@ public class Application : GameWindow
 //        GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, TextureWrapMode.);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 2, 2, 0, PixelFormat.Rgb, PixelType.UnsignedByte, textureData);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, 800, 600, 0, PixelFormat.Rgb, PixelType.UnsignedByte, textureData);
         
         GL.BindVertexArray(vao);
         GL.DrawElements(BeginMode.Triangles, 6, DrawElementsType.UnsignedInt, 0);
