@@ -22,7 +22,7 @@ public class Triangle(Vector3 a, Vector3 b, Vector3 c, IMaterial material) : IPr
             var hitPoint = origin + t * direction;
 
             var ab = _b - a;
-            var ac = _c - _a;
+            var ca = _a - _c;
             var bc = _c - _b;
 
             var ah = hitPoint - _a;
@@ -30,7 +30,7 @@ public class Triangle(Vector3 a, Vector3 b, Vector3 c, IMaterial material) : IPr
             var ch = hitPoint - _c;
 
             if (Vector3.Dot(normal, Vector3.Cross(ab, ah)) > 0 &&
-                Vector3.Dot(normal, Vector3.Cross(ac, ah)) > 0 &&
+                Vector3.Dot(normal, Vector3.Cross(ca, ch)) > 0 &&
                 Vector3.Dot(normal, Vector3.Cross(bc, bh)) > 0)
             {
                 result.IsHit = true;
