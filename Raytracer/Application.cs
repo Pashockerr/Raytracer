@@ -70,7 +70,7 @@ public class Application : GameWindow
         
         Console.WriteLine("Initializing raytracer...");
         IPrimitive[] primitives = new IPrimitive[1];
-        primitives[0] = new Plane(Vector3.Zero, new Vector3(0, 1.0f, 0), new Vector3(1.0f, 0.0f, 0.0f));
+        primitives[0] = new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new Vector3(1.0f, 0.0f, 0.0f));
         _scene = new Scene(primitives);
         _raytracer = new Raytracer(800, 600, 0.5f, 0.8f, 0.6f, _scene, Vector3.Zero);
         Console.WriteLine("Raytracer initialized.");
@@ -84,7 +84,11 @@ public class Application : GameWindow
         {
             Close();
         }
-        
+
+        for (int i = 0; i < textureData.Length; i++)
+        {
+            textureData[i] = 255;
+        }
         _raytracer.Render(textureData);
         
         GL.Clear(ClearBufferMask.ColorBufferBit);

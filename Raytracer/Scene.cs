@@ -4,5 +4,5 @@ namespace Raytracer;
 
 public class Scene(IPrimitive[] primitives)
 {
-    public IPrimitive[] Primitives = primitives;
+    public readonly IPrimitive[] Primitives = primitives;
 }

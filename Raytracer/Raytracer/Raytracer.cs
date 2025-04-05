@@ -38,7 +38,6 @@ public class Raytracer
         _viewportCenter = cameraPosition + new Vector3(0, 0, _viewportDistance);
     }
     
-    // FIXME : not whole screen is utilized
     public void Render(byte[] texture)
     {
         if (texture.Length != _width * _height * 3)
@@ -56,10 +55,10 @@ public class Raytracer
                 var viewportPoint = _viewportCenter + new Vector3(dVX, dVY, 0);
                 var direction = viewportPoint - _cameraPosition;    // Direction vector from camera center to current viewport point
                 float minDistance = float.MaxValue;
-                HitResult? closestHitResult = null;
-                for (int pI = 0; pI < _scene.Primitives.Length; pI++)   // Find closest hit
+                HitResult? closestHitResult = HitResult.Skybox;
+                for (int pI = 0; pI < _scene.Primitives.Length; pI++)   // Find the closest hit
                 {
-                    var hitResult = _scene.Primitives[pI].Intersect(_cameraPosition, direction);
+                    var hitResult = _scene.Primitives[pI].Intersect(_cameraPosition, direction.Normalized());
                     if (hitResult.Distance < minDistance)
                     {
                         minDistance = hitResult.Distance;
@@ -69,9 +68,9 @@ public class Raytracer
 
                 // Put collided color into texture
                 var pixelColor = ConvertColor(closestHitResult!.Value.Color);
-                texture[(dPY * _height + dPX) * 3] = pixelColor[0];
-                texture[(dPY * _height + dPX) * 3 + 1] = pixelColor[1];
-                texture[(dPY * _height + dPX) * 3 + 2] = pixelColor[2];
+                texture[(dPY * _width + dPX) * 3] = pixelColor[0];
+                texture[(dPY * _width + dPX) * 3 + 1] = pixelColor[1];
+                texture[(dPY * _width + dPX) * 3 + 2] = pixelColor[2];
             }
         }
     }
