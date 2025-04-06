@@ -1,5 +1,6 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Platform.Windows;
+using Raytracer.Light;
 using Raytracer.Materials;
 
 namespace Raytracer;
@@ -16,6 +17,9 @@ public class Raytracer
     private readonly float _verticalRayStep;
     private readonly Vector3 _viewportCenter;
     private readonly Vector3 _cameraPosition;
+
+    private const float MinIllumination = 0.0003f;
+    private const float MaxIllumination = 130_000.0f;
     
     // No rotation support. Camera faced towards Z+ axis.
     public Raytracer(int width, int height, float viewportDistance, float viewportWidth, float viewportHeight,
@@ -67,13 +71,7 @@ public class Raytracer
                     }
                 }
                 
-                IMaterial collidedMaterial = closestHitResult.Material;
-                Vector3 pointColor = Vector3.Zero;
-                if (collidedMaterial is DefaultMaterial material)
-                {
-                    pointColor = material.Color;
-                }
-                
+                Vector3 pointColor = ComputeColor(closestHitResult);
                 byte[] pixelColor = ConvertColor(pointColor);
 
                 // Put collided color into texture
@@ -84,6 +82,40 @@ public class Raytracer
         }
     }
 
+    // Compute hit point visible color based on material and lighting
+    private Vector3 ComputeColor(HitResult hitResult)
+    {
+        var resultColor = (HitResult.Skybox.Material as DefaultMaterial)!.Color;
+
+        if (hitResult.Material is Diffuse diffuse)
+        {
+            var color = diffuse.Color;
+            float illumination = 0;
+            Vector3 brightness = Vector3.Zero;
+            foreach(var lightSource in _scene.LightSources)
+            {
+                if (lightSource is PointLight pointLight)
+                {
+                    var lightDirection = (hitResult.HitPoint - pointLight.Position).Normalized();
+                    var angle = (float)Math.Acos(Vector3.Dot(lightDirection, hitResult.Normal)) - (float)Math.PI;
+                    var distance = Vector3.Distance(pointLight.Position, hitResult.HitPoint);
+                    illumination += pointLight.GetIllumination(distance, angle);
+                    
+                    float brightnessMono = IlluminationToBrightness(illumination) * (float)Math.Cos(angle);
+                    brightness += pointLight.Color * color *  brightnessMono;
+                }
+            }
+            resultColor = brightness;
+        }
+        
+        if(hitResult.Material is DefaultMaterial defaultMaterial)
+        {
+            resultColor = defaultMaterial.Color;
+        }
+        
+        return resultColor;
+    }
+    
     private static byte[] ConvertColor(Vector3 color)
     {
         byte[] result = new byte[3];
@@ -91,5 +123,20 @@ public class Raytracer
         result[1] = (byte)(color.Y * 255);
         result[2] = (byte)(color.Z * 255);
         return result;
+    }
+
+    private float IlluminationToBrightness(float illumination)
+    {
+        if (illumination < MinIllumination)
+        {
+            return 0;
+        }
+
+        if (illumination > MaxIllumination)
+        {
+            return 1;
+        }
+        
+        return (illumination - MinIllumination) / (MaxIllumination - MinIllumination);
     }
 }

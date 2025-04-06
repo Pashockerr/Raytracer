@@ -24,6 +24,9 @@ public class Sphere(Vector3 position, float radius, IMaterial material) : IPrimi
             var t = (-b + (float)Math.Sqrt(discriminant)) / (2 * a);
             result.Distance = t;
             result.Material = _material;
+            result.HitPoint = origin + t * direction;
+            var normal = Vector3.Normalize(result.HitPoint - _position);
+            result.Normal = normal;
         }
 
         if (discriminant > 0)
@@ -31,7 +34,10 @@ public class Sphere(Vector3 position, float radius, IMaterial material) : IPrimi
             var t1 = (-b - (float)Math.Sqrt(discriminant)) / (2 * a);
             var t2 = (-b + (float)Math.Sqrt(discriminant)) / (2 * a);
             result.Distance = Math.Min(t1, t2);
+            result.HitPoint = origin + result.Distance * direction;
             result.Material = _material;
+            var normal = Vector3.Normalize(result.HitPoint - _position);
+            result.Normal = normal; 
         }
         
         return result;

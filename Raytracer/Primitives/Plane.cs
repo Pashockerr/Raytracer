@@ -21,6 +21,8 @@ public class Plane(Vector3 position, Vector3 normal, IMaterial material) : IPrim
             result.IsHit = true;
             result.Distance = t;
             result.Material = _material;
+            result.HitPoint = origin + t * direction;
+            result.Normal = _normal;
         }
         
         return result;

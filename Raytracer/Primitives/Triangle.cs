@@ -36,6 +36,8 @@ public class Triangle(Vector3 a, Vector3 b, Vector3 c, IMaterial material) : IPr
                 result.IsHit = true;
                 result.Distance = t;
                 result.Material = material;
+                result.HitPoint = origin + t * direction;
+                result.Normal = normal * -1;
             }
         }
         

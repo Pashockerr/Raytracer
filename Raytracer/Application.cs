@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Raytracer.Light;
 using Raytracer.Materials;
 using Raytracer.Primitives;
 
@@ -70,11 +71,14 @@ public class Application : GameWindow
         Console.WriteLine("Ended shader compilation.");
         
         Console.WriteLine("Initializing raytracer...");
-        IPrimitive[] primitives = new IPrimitive[3];
-        primitives[0] = new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new DefaultMaterial(new Vector3(1.0f, 0.0f, 0.0f)));
-        primitives[1] = new Sphere(new Vector3(0, 0, 2.0f), .5f, new DefaultMaterial(new Vector3(0, 1.0f, 0)));
-        primitives[2] = new Triangle(new Vector3(-.25f, 0, 1.0f), new Vector3(.25f, 0, 1.0f), new Vector3(0, 1, 2.0f), new DefaultMaterial(new Vector3(1.0f, 1.0f, 0)));
-        _scene = new Scene(primitives);
+        IPrimitive[] primitives = new IPrimitive[2];
+        primitives[0] = new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new Diffuse(new Vector3(1.0f, 1.0f, 1.0f)));
+        primitives[1] = new Sphere(new Vector3(0, 0, 2.0f), .25f, new Diffuse(new Vector3(1.0f, 1.0f, 1.0f)));
+        ILightSource[] lights = new ILightSource[3];
+        lights[0] = new PointLight(new Vector3(0, 2.0f, 2), new Vector3(1.0f, 0.0f, 0.0f), 1000);
+        lights[1] = new PointLight(new Vector3(1, 2.0f, 0), new Vector3(0.0f, 1.0f, 0.0f), 1000); 
+        lights[2] = new PointLight(new Vector3(-1, 2.0f, 0), new Vector3(0.0f, 0.0f, 1.0f), 1000); 
+        _scene = new Scene(primitives, lights);
         _raytracer = new Raytracer(800, 600, 0.5f, 0.8f, 0.6f, _scene, Vector3.Zero);
         Console.WriteLine("Raytracer initialized.");
     }
