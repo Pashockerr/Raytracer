@@ -2,7 +2,6 @@
 
 namespace Raytracer.Materials;
 
-public class Diffuse(Vector3 color) : IMaterial
+public class Diffuse(Vector3 color) : AbstractMaterial(color)
 {
-    public Vector3 Color { get; set; } =  color;
 }

@@ -3,11 +3,11 @@ using Raytracer.Materials;
 
 namespace Raytracer.Primitives;
 
-public class Plane(Vector3 position, Vector3 normal, IMaterial material) : IPrimitive
+public class Plane(Vector3 position, Vector3 normal, AbstractMaterial abstractMaterial) : IPrimitive
 {
     private Vector3 _position = position;
     private Vector3 _normal = normal;
-    private IMaterial _material = material;
+    private AbstractMaterial _abstractMaterial = abstractMaterial;
     
     public HitResult Intersect(Vector3 origin, Vector3 direction)
     {
@@ -19,10 +19,11 @@ public class Plane(Vector3 position, Vector3 normal, IMaterial material) : IPrim
         if (t >= 0)
         {
             result.IsHit = true;
-            result.Distance = t;
-            result.Material = _material;
-            result.HitPoint = origin + t * direction;
+            result.Distance1 = t;
+            result.AbstractMaterial = _abstractMaterial;
+            result.HitPoint1 = origin + t * direction;
             result.Normal = _normal;
+            result.HitDirection = direction;
         }
         
         return result;

@@ -43,51 +43,54 @@ public class Raytracer
         _viewportCenter = cameraPosition + new Vector3(0, 0, _viewportDistance);
     }
     
-    public void Render(byte[] texture)
+    public void Render(byte[] texture, int startPixel, int pixelAmount)
     {
         if (texture.Length != _width * _height * 3)
         {
             throw new Exception($"Buffer size mismatch. Buffer size must be {_width * _height * 3} bytes length.");
         }
 
-        for (int dPY = 0; dPY < _height; dPY++)
+        int totalPixels = _width * _height;
+        int pixelCount = 0;
+        for (int pI = startPixel; pI < startPixel + pixelAmount; pI++)
         {
-            for (int dPX = 0; dPX < _width; dPX++)
+            int dPY = (int)Math.Floor((double)pI / _width);
+            int dPX = pI - dPY * _width;
+            // Compute canvas deltas based on pixels deltas
+            float dVX = -_viewportWidth / 2 + dPX * _horizontalRayStep;
+            float dVY = _viewportHeight / 2 - dPY * _verticalRayStep;
+            var viewportPoint = _viewportCenter + new Vector3(dVX, dVY, 0);
+            var direction = viewportPoint - _cameraPosition;    // Direction vector from camera center to current viewport point
+            float minDistance = float.MaxValue;
+            HitResult closestHitResult = HitResult.Skybox;
+            for (int primI = 0; primI < _scene.Primitives.Length; primI++)   // Find the closest hit
             {
-                // Compute canvas deltas based on pixels deltas
-                float dVX = -_viewportWidth / 2 + dPX * _horizontalRayStep;
-                float dVY = _viewportHeight / 2 - dPY * _verticalRayStep;
-                var viewportPoint = _viewportCenter + new Vector3(dVX, dVY, 0);
-                var direction = viewportPoint - _cameraPosition;    // Direction vector from camera center to current viewport point
-                float minDistance = float.MaxValue;
-                HitResult closestHitResult = HitResult.Skybox;
-                for (int pI = 0; pI < _scene.Primitives.Length; pI++)   // Find the closest hit
+                var hitResult = _scene.Primitives[primI].Intersect(_cameraPosition, direction.Normalized());
+                if (hitResult.Distance1 < minDistance)
                 {
-                    var hitResult = _scene.Primitives[pI].Intersect(_cameraPosition, direction.Normalized());
-                    if (hitResult.Distance < minDistance)
-                    {
-                        minDistance = hitResult.Distance;
-                        closestHitResult = hitResult;
-                    }
+                    minDistance = hitResult.Distance1;
+                    closestHitResult = hitResult;
                 }
-                
-                Vector3 pointColor = ComputeColor(closestHitResult);
-                byte[] pixelColor = ConvertColor(pointColor);
-
-                // Put collided color into texture
-                texture[(dPY * _width + dPX) * 3] = pixelColor[0];
-                texture[(dPY * _width + dPX) * 3 + 1] = pixelColor[1];
-                texture[(dPY * _width + dPX) * 3 + 2] = pixelColor[2];
             }
+            
+            Vector3 pointColor = ComputeColor(closestHitResult);
+            byte[] pixelColor = ConvertColor(pointColor);
+
+            // Put collided color into texture
+            texture[(dPY * _width + dPX) * 3] = pixelColor[0];
+            texture[(dPY * _width + dPX) * 3 + 1] = pixelColor[1];
+            texture[(dPY * _width + dPX) * 3 + 2] = pixelColor[2];
+            pixelCount++;
         }
     }
 
     // Compute hit point visible color based on material and lighting
     private Vector3 ComputeColor(HitResult hitResult)
     {
-        var resultColor = (HitResult.Skybox.Material as DefaultMaterial)!.Color;
+        var resultColor = (HitResult.Skybox.AbstractMaterial as DefaultAbstractMaterial)!.Color;
 
-        if (hitResult.Material is Diffuse diffuse)
+        // With 100% diffuse material
+        if (hitResult.AbstractMaterial is Diffuse diffuse)
         {
             var color = diffuse.Color;
             float illumination = 0;
@@ -96,21 +99,30 @@ public class Raytracer
             {
                 if (lightSource is PointLight pointLight)
                 {
-                    var lightDirection = (hitResult.HitPoint - pointLight.Position).Normalized();
+                    var lightDirection = (hitResult.HitPoint1 - pointLight.Position).Normalized();
                     var angle = (float)Math.Acos(Vector3.Dot(lightDirection, hitResult.Normal)) - (float)Math.PI;
-                    var distance = Vector3.Distance(pointLight.Position, hitResult.HitPoint);
+                    var distance = Vector3.Distance(pointLight.Position, hitResult.HitPoint1);
                     illumination += pointLight.GetIllumination(distance, angle);
                     
-                    float brightnessMono = IlluminationToBrightness(illumination) * (float)Math.Cos(angle);
+                    float brightnessMono = IlluminationToBrightness(illumination) * (float)Math.Max(Math.Cos(angle), 0);
                     brightness += pointLight.Color * color *  brightnessMono;
                 }
             }
             resultColor = brightness;
         }
         
-        if(hitResult.Material is DefaultMaterial defaultMaterial)
+        // With color only default material
+        if(hitResult.AbstractMaterial is DefaultAbstractMaterial defaultMaterial)
         {
             resultColor = defaultMaterial.Color;
+        }
+
+        // With refractive sphere(only 1 refraction)
+        if (hitResult.AbstractMaterial is Transparent transparent && hitResult.HitPoint2 != Vector3.Zero && hitResult.Distance2 != 0)   // Only for sphere double intersections
+        {
+            var alpha = (float)Math.Acos(Vector3.Dot((hitResult.HitDirection * -1), hitResult.Normal));
+            var gamma = (Math.Asin((1 * Math.Sin(alpha) / transparent.N)));     // 1 is air refraction coefficient
+            // TODO : rotate inner vector
         }
         
         return resultColor;

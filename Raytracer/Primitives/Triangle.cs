@@ -3,12 +3,12 @@ using Raytracer.Materials;
 
 namespace Raytracer.Primitives;
 
-public class Triangle(Vector3 a, Vector3 b, Vector3 c, IMaterial material) : IPrimitive
+public class Triangle(Vector3 a, Vector3 b, Vector3 c, AbstractMaterial abstractMaterial) : IPrimitive
 {
     private Vector3 _a = a;
     private Vector3 _b = b;
     private Vector3 _c = c;
-    private IMaterial _material = material;
+    private AbstractMaterial _abstractMaterial = abstractMaterial;
     public HitResult Intersect(Vector3 origin, Vector3 direction)
     {
         var result = HitResult.Skybox;
@@ -34,10 +34,11 @@ public class Triangle(Vector3 a, Vector3 b, Vector3 c, IMaterial material) : IPr
                 Vector3.Dot(normal, Vector3.Cross(bc, bh)) > 0)
             {
                 result.IsHit = true;
-                result.Distance = t;
-                result.Material = material;
-                result.HitPoint = origin + t * direction;
-                result.Normal = normal * -1;
+                result.Distance1 = t;
+                result.AbstractMaterial = abstractMaterial;
+                result.HitPoint1 = origin + t * direction;
+                result.Normal = normal;
+                result.HitDirection = direction;
             }
         }
         

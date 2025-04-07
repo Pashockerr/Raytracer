@@ -3,11 +3,11 @@ using Raytracer.Materials;
 
 namespace Raytracer.Primitives;
 
-public class Sphere(Vector3 position, float radius, IMaterial material) : IPrimitive
+public class Sphere(Vector3 position, float radius, AbstractMaterial abstractMaterial) : IPrimitive
 {
     private Vector3 _position =  position;
     private float _radius = radius;
-    private IMaterial _material = material;
+    private AbstractMaterial _abstractMaterial = abstractMaterial;
     
     public HitResult Intersect(Vector3 origin, Vector3 direction)
     {
@@ -22,22 +22,24 @@ public class Sphere(Vector3 position, float radius, IMaterial material) : IPrimi
         if (discriminant == 0)
         {
             var t = (-b + (float)Math.Sqrt(discriminant)) / (2 * a);
-            result.Distance = t;
-            result.Material = _material;
-            result.HitPoint = origin + t * direction;
-            var normal = Vector3.Normalize(result.HitPoint - _position);
+            result.Distance1 = t;
+            result.AbstractMaterial = _abstractMaterial;
+            result.HitPoint1 = origin + t * direction;
+            var normal = Vector3.Normalize(result.HitPoint1 - _position);
             result.Normal = normal;
+            result.HitDirection = direction;
         }
 
         if (discriminant > 0)
         {
             var t1 = (-b - (float)Math.Sqrt(discriminant)) / (2 * a);
             var t2 = (-b + (float)Math.Sqrt(discriminant)) / (2 * a);
-            result.Distance = Math.Min(t1, t2);
-            result.HitPoint = origin + result.Distance * direction;
-            result.Material = _material;
-            var normal = Vector3.Normalize(result.HitPoint - _position);
-            result.Normal = normal; 
+            result.Distance1 = Math.Min(t1, t2);
+            result.HitPoint1 = origin + result.Distance1 * direction;
+            result.AbstractMaterial = _abstractMaterial;
+            var normal = Vector3.Normalize(result.HitPoint1 - _position);
+            result.Normal = normal;
+            result.HitDirection = direction;
         }
         
         return result;
