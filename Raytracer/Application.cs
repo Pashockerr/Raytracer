@@ -76,16 +76,16 @@ public class Application : GameWindow
         
         Console.WriteLine("Initializing raytracer...");
         List<IPrimitive> primitives = new List<IPrimitive>();
-        primitives.Add(new Plane(new Vector3(0, -3, 0), new Vector3(0, 1.0f, 0), new Diffuse(new Vector3(1.0f, 1.0f, 1.0f))));
+        primitives.Add(new Plane(new Vector3(0, -.25f, 0), new Vector3(0, 1.0f, 0), new Diffuse(new Vector3(1.0f, 1.0f, 1.0f))));
         primitives.Add(new Sphere(new Vector3(0, -.25f, 2.0f), .5f, new Diffuse(new Vector3(1.0f, 1.0f, 1.0f))));
         
-        Console.WriteLine("Loading model...");
-        Model monke = OBJLoader.LoadModel("./Models/monke.obj");
-        primitives.AddRange(monke.Triangles);
-        Console.WriteLine("Loaded model.");
-        
+        // Console.WriteLine("Loading model...");
+        // Model monke = OBJLoader.LoadModel("./Models/monke.obj");
+        // primitives.AddRange(monke.Triangles);
+        // Console.WriteLine("Loaded model.");
+        //
         ILightSource[] lights = new ILightSource[1];
-        lights[0] = new PointLight(new Vector3(0, 3.0f, -4), new Vector3(1.0f, 1.0f, 1.0f), 1500);
+        lights[0] = new PointLight(new Vector3(0, 1, 0), new Vector3(1.0f, 1.0f, 1.0f), 1500);
         // lights[1] = new PointLight(new Vector3(1, 2.0f, -4), new Vector3(1.0f, 1.0f, 1.0f), 500); 
         // lights[2] = new PointLight(new Vector3(-1, 2.0f, -4), new Vector3(1.0f, 1.0f, 1.0f), 500); 
         _scene = new Scene(primitives.ToArray(), lights);

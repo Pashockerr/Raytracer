@@ -20,6 +20,7 @@ public class Raytracer
 
     private const float MinIllumination = 0.0003f;
     private const float MaxIllumination = 130_000.0f;
+    private const int MaxRecursionDepth = 3;
     
     // No rotation support. Camera faced towards Z+ axis.
     public Raytracer(int width, int height, float viewportDistance, float viewportWidth, float viewportHeight,
@@ -73,7 +74,7 @@ public class Raytracer
                 }
             }
             
-            Vector3 pointColor = ComputeColor(closestHitResult);
+            Vector3 pointColor = Trace(_cameraPosition, direction.Normalized(), MaxRecursionDepth);
             byte[] pixelColor = ConvertColor(pointColor);
 
             // Put collided color into texture
@@ -82,6 +83,32 @@ public class Raytracer
             texture[(dPY * _width + dPX) * 3 + 2] = pixelColor[2];
             pixelCount++;
         }
+    }
+
+    private Vector3 Trace(Vector3 origin, Vector3 direction, int steps) // TODO : do recursive light reflection
+    {
+        float minDistance = float.MaxValue;
+        HitResult closestHitResult = HitResult.Skybox;
+        for (int primI = 0; primI < _scene.Primitives.Length; primI++)   // Find the closest hit
+        {
+            var hitResult = _scene.Primitives[primI].Intersect(_cameraPosition, direction.Normalized());
+            if (hitResult.Distance1 < minDistance)
+            {
+                minDistance = hitResult.Distance1;
+                closestHitResult = hitResult;
+            }
+        }
+        Vector3 pointColor = Vector3.Zero;
+        if (steps == 0 || !closestHitResult.IsHit)
+        {
+            pointColor = ComputeColor(closestHitResult);
+        }
+        else
+        {
+            pointColor += Trace(closestHitResult.HitPoint1,
+                Reflect(closestHitResult.HitDirection, closestHitResult.Normal), steps - 1);
+        }
+        return pointColor;
     }
 
     // Compute hit point visible color based on material and lighting
@@ -150,5 +177,10 @@ public class Raytracer
         }
         
         return (illumination - MinIllumination) / (MaxIllumination - MinIllumination);
+    }
+
+    private Vector3 Reflect(Vector3 hitVector, Vector3 normal)  // Reflects vector from surface with given normal vector
+    {
+        return 2 * normal + hitVector.Normalized();
     }
 }
